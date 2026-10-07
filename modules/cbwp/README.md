@@ -13,7 +13,7 @@ Provider: `aliyun/alicloud ~> 1.293`. OpenTofu `>= 1.10.0, < 1.11.0`. The module
 | `internet_charge_type` | `string` | no | Default `PayByBandwidth`; or `PayByTraffic`. ForceNew. Pay-by-traffic packages are limited to 5 per account and region. |
 | `isp` | `string` | no | Default `BGP`; or `BGP_PRO` (only some regions). ForceNew. Must equal the ISP of every attached EIP. |
 | `description` | `string` | no | Default `null`. 2-256 characters. |
-| `deletion_protection` | `bool` | no | Default `true`. |
+| `deletion_protection` | `bool` | no | Default `false`. |
 | `eip_ids` | `map(string)` | no | Default `{}`. EIP name => allocation ID (`eip-...`), at most 100. |
 | `alb_ids` | `map(string)` | no | Default `{}`. ALB name => load balancer ID (`alb-...`). |
 | `tags` | `map(string)` | yes | Resource tags. At least one tag is required; keys and values must not be empty. |

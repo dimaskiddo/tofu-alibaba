@@ -126,7 +126,7 @@ variable "security_ips" {
 variable "deletion_protection" {
   type        = bool
   description = "Block deletion of the instance. A ForceNew change then fails at the delete step instead of dropping the data."
-  default     = true
+  default     = false
   nullable    = false
 }
 

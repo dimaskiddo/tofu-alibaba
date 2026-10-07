@@ -15,8 +15,8 @@ run "defaults" {
   }
 
   assert {
-    condition     = alicloud_kms_key.this.automatic_rotation == "Enabled" && alicloud_kms_key.this.rotation_interval == "31536000s" && alicloud_kms_key.this.deletion_protection == "Enabled"
-    error_message = "rotation and deletion protection must be on by default"
+    condition     = alicloud_kms_key.this.automatic_rotation == "Enabled" && alicloud_kms_key.this.rotation_interval == "31536000s" && alicloud_kms_key.this.deletion_protection == "Disabled"
+    error_message = "rotation on and deletion protection off by default"
   }
 
   assert {
@@ -29,12 +29,12 @@ run "rotation_off" {
   command = plan
   variables {
     rotation_interval   = null
-    deletion_protection = false
+    deletion_protection = true
   }
 
   assert {
-    condition     = alicloud_kms_key.this.automatic_rotation == "Disabled" && alicloud_kms_key.this.deletion_protection == "Disabled"
-    error_message = "null rotation_interval must disable rotation"
+    condition     = alicloud_kms_key.this.automatic_rotation == "Disabled" && alicloud_kms_key.this.deletion_protection == "Enabled"
+    error_message = "null rotation_interval must disable rotation; an explicit true must enable protection"
   }
 }
 

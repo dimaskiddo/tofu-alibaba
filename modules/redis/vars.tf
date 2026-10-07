@@ -153,7 +153,7 @@ variable "security_ips" {
 
 variable "deletion_protection" {
   type        = bool
-  description = "Release protection of a Redis OSS instance; null means true. Tair has no such field, so it must stay null there."
+  description = "Release protection of a Redis OSS instance; null means false. Tair has no such field, so it must stay null there."
   default     = null
 
   validation {

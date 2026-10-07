@@ -124,7 +124,7 @@ The folder name picks the VPC, so it must be a `vpc` instance name. Every zone i
 | `internet_charge_type` (optional) | `PayByBandwidth` (default) or `PayByTraffic`. ForceNew. Pay-by-traffic packages are limited to 5 per account and region. |
 | `isp` (optional) | `BGP` (default) or `BGP_PRO`. ForceNew; must equal the ISP of every attached EIP (the example EIPs are `BGP`). |
 | `description` (optional) | 2-256 characters. |
-| `deletion_protection` (optional) | Default `true`. |
+| `deletion_protection` (optional) | Default `false`. |
 | `eips` (optional) | List of EIP names from `eip`. PayAsYouGo, same region and ISP, at most 100 per package. Removing a name restores that EIP's own bandwidth and billing. |
 | `albs` (optional) | List of ALB names from `slb/alb`. Internet-facing only (the API rejects an intranet ALB at apply). Adding or removing one does not replace the ALB. |
 
@@ -160,7 +160,7 @@ Without a key pair, login comes from `EXAMPLE_STAGE_ECS_PASSWORD` (8-30 letters 
 | `dkms_instance_id` | ID of an existing KMS instance (bought in the console, not managed here). Omitted in the example instance files, so the leaf falls back to `EXAMPLE_STAGE_KMS_INSTANCE_ID` (mapped by `root.hcl`); empty fails. ForceNew. |
 | `description`, `key_spec`, `pending_window_in_days` (optional) | Symmetric spec (default `Aliyun_AES_256`); deletion pending window 7-366 days (default 30). |
 | `rotation_interval` (optional) | Default `365d`; `null` disables rotation. |
-| `deletion_protection` (optional) | Default `true`. Deleting or disabling a key locks every disk and RDS instance encrypted with it. |
+| `deletion_protection` (optional) | Default `false`. Deleting or disabling a key locks every disk and RDS instance encrypted with it. |
 
 `kms-1` encrypts ECS disks, `kms-2` RDS, `kms-3` MongoDB, so disabling one never locks the other.
 

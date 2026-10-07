@@ -15,9 +15,9 @@ run "defaults" {
       alicloud_common_bandwidth_package.this.bandwidth == "20" &&
       alicloud_common_bandwidth_package.this.internet_charge_type == "PayByBandwidth" &&
       alicloud_common_bandwidth_package.this.isp == "BGP" &&
-      alicloud_common_bandwidth_package.this.deletion_protection == true
+      alicloud_common_bandwidth_package.this.deletion_protection == false
     )
-    error_message = "defaults must be PayByBandwidth, BGP, deletion protection on"
+    error_message = "defaults must be PayByBandwidth, BGP, deletion protection off"
   }
 
   assert {

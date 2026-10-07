@@ -17,7 +17,7 @@ Provider: `aliyun/alicloud ~> 1.293`, `hashicorp/random ~> 3.7`. OpenTofu `>= 1.
 | `db_instance_storage_type` | `string` | no | Default `cloud_essd`. One of `cloud_ssd`, `cloud_essd`, `cloud_essd2`, `cloud_essd3`, `general_essd`. |
 | `placement` | `list(object)` | yes | One or two `{ zone_id = string, vswitch_id = string }` (both required) in distinct zones; primary first. ForceNew. Basic takes exactly one. A single entry on `HighAvailability` leaves the standby zone to Alibaba Cloud. |
 | `security_ips` | `list(string)` | yes | 1-1000 IPv4 addresses or IPv4 CIDRs; any `/0` and the bare `0.0.0.0` are rejected. |
-| `deletion_protection` | `bool` | no | Default `true`. |
+| `deletion_protection` | `bool` | no | Default `false`. |
 | `maintain_time` | `string` | no | Default `null` (Alibaba Cloud chooses). UTC window `HH:MMZ-HH:MMZ`, for example `02:00Z-03:00Z`; any such window is accepted, its length is not checked. |
 | `parameters` | `list(object)` | no | Default `[]`. `{ name = string, value = string }` (both required); names unique. |
 | `storage_auto_scale` | `object` | no | Default `null` (sends `storage_auto_scale = "Disable"`). `{ threshold = number, upper_bound = number }` (both required); `threshold` 10, 20, 30, 40 or 50 (percent free space); `upper_bound` (GB) must exceed `instance_storage`. |

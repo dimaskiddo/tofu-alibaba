@@ -14,7 +14,7 @@ Provider: `aliyun/alicloud ~> 1.293`. OpenTofu `>= 1.10.0, < 1.11.0`. The module
 | `key_spec` | `string` | no | Default `Aliyun_AES_256` (ForceNew). Allowed (symmetric only): `Aliyun_AES_256`, `Aliyun_AES_192`, `Aliyun_AES_128`, `Aliyun_SM4`. |
 | `rotation_interval` | `string` | no | Default `365d`. A positive integer plus one unit `d`, `h`, `m` or `s` (regex `^[1-9][0-9]*[dhms]$`, for example `365d`, `8760h`, `31536000s`). The period must be 7 to 365 days (604800 to 31536000 seconds). The module sends it normalised to seconds (`365d` becomes `31536000s`) because the API returns seconds and the provider does not suppress the difference. `null` disables rotation (`automatic_rotation = Disabled`). |
 | `pending_window_in_days` | `number` | no | Default `30`. Days a deleted key stays recoverable; whole number 7-366. |
-| `deletion_protection` | `bool` | no | Default `true`. |
+| `deletion_protection` | `bool` | no | Default `false`. |
 | `tags` | `map(string)` | yes | Resource tags. At least one tag is required; keys and values must not be empty. |
 
 ## Outputs

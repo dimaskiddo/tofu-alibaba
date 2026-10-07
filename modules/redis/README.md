@@ -20,7 +20,7 @@ Provider: `aliyun/alicloud ~> 1.293`, `hashicorp/random ~> 3.7`. OpenTofu `>= 1.
 | `storage_size_gb` | `number` | `tair_essd` 1.0 | Default `null`. Disk size in GB of an ESSD instance (ForceNew). Required for `tair_essd` with `engine_version` 1.0 (ESSD), rejected otherwise (`2.0` is SSD with a fixed size). |
 | `storage_performance_level` | `string` | no | Default `null`. `PL1`, `PL2` or `PL3`, `tair_essd` 1.0 only (ForceNew). PL1 fits 4C-16C, PL2 8C-52C, PL3 16C-52C classes. |
 | `security_ips` | `list(string)` | yes | 1-1000 IPv4 addresses or CIDRs; a bare `0.0.0.0` and any `/0` are rejected. |
-| `deletion_protection` | `bool` | no | Default `null`, which sends `true`. Only valid for `Redis`; the Tair resource has no release protection and the module rejects the input. |
+| `deletion_protection` | `bool` | no | Default `null`, which sends `false`. Only valid for `Redis`; the Tair resource has no release protection and the module rejects the input. |
 | `password` | `string` | no | Default `null`, sensitive. Default-account password, 8-32 chars from letters, digits and `!@#$%^&*()_+=-`, at least 3 of 4 classes. Null generates a random one. |
 | `password_length` | `number` | no | Default `16`. 8-32; length of a generated password. |
 | `tags` | `map(string)` | yes | At least one tag; keys and values not empty. |

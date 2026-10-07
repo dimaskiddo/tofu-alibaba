@@ -71,7 +71,7 @@ variable "pending_window_in_days" {
 variable "deletion_protection" {
   type        = bool
   description = "Block deletion of the key. Deleting a key in use locks every disk and database encrypted with it."
-  default     = true
+  default     = false
   nullable    = false
 }
 

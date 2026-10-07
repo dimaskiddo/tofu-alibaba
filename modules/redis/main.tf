@@ -30,7 +30,7 @@ resource "alicloud_kvstore_instance" "this" {
   security_ips                = var.security_ips
   shard_count                 = var.shard_count
   password                    = local.password
-  instance_release_protection = coalesce(var.deletion_protection, true)
+  instance_release_protection = coalesce(var.deletion_protection, false)
   tags                        = var.tags
 }
 

@@ -26,8 +26,8 @@ run "basic_mysql" {
   }
 
   assert {
-    condition     = alicloud_db_backup_policy.this.enable_backup_log == false && alicloud_db_instance.this.deletion_protection == true
-    error_message = "Basic has no log backup; deletion protection defaults on"
+    condition     = alicloud_db_backup_policy.this.enable_backup_log == false && alicloud_db_instance.this.deletion_protection == false
+    error_message = "Basic has no log backup; deletion protection defaults off"
   }
 
   assert {

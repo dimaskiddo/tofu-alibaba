@@ -56,7 +56,7 @@ variable "description" {
 variable "deletion_protection" {
   type        = bool
   description = "Block deletion of the package."
-  default     = true
+  default     = false
   nullable    = false
 }
 

@@ -22,8 +22,8 @@ run "redis_oss_selected" {
   }
 
   assert {
-    condition     = alicloud_kvstore_instance.this[0].payment_type == "PostPaid" && alicloud_kvstore_instance.this[0].instance_release_protection == true
-    error_message = "pay-as-you-go and release protection on by default"
+    condition     = alicloud_kvstore_instance.this[0].payment_type == "PostPaid" && alicloud_kvstore_instance.this[0].instance_release_protection == false
+    error_message = "pay-as-you-go and release protection off by default"
   }
 }
 
