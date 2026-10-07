@@ -29,7 +29,7 @@ flowchart TD
     end
     V1 <-->|"peer-1"| V2
     V2 <-->|"cen-1"| V3
-    WL["ecs, rds-1 + rds-2, redis-1 + redis-2, kafka-1, es-1, nat-1 (internet) + nat-2 (intranet), slb (clb-1/2, alb-1/2)"]
+    WL["ecs, rds-1 + rds-2, redis-1 + redis-2, mongodb-1 + mongodb-2, kafka-1, es-1, nat-1 (internet) + nat-2 (intranet), slb (clb-1/2, alb-1/2)"]
     BW["cbwp-1: shared bandwidth for both NAT EIPs and alb-2"]
 ```
 
@@ -41,12 +41,13 @@ Leaves, in dependency order (a leaf can only reference leaves above it):
 | `subnet` | vSwitches | `subnet/<vpc-name>/<subnet>.hcl` |
 | `security-group` | security group + rules | `sg-1-…` |
 | `eip` | EIPs | `eip-snat-1-…`, `eip-dnat-1-…` |
-| `kms` | KMS keys | `kms-1-…` (ECS disks), `kms-2-…` (RDS) |
+| `kms` | KMS keys | `kms-1-…` (ECS disks), `kms-2-…` (RDS), `kms-3-…` (MongoDB) |
 | `ram` | RAM users + AccessKeys for the buckets | `ram-oss-1-…`, `ram-oss-2-…` |
 | `oss` | OSS buckets | `oss-1-…` (private), `oss-2-…` (public) |
 | `ecs` | ECS instances | `app-1-…`, `bastion-1-…` |
 | `rds` | RDS instances | `rds-1-…` (MySQL Basic), `rds-2-…` (PostgreSQL HA) |
 | `redis` | Redis OSS / Tair instances | `redis-1-…` (Redis, two zones), `redis-2-…` (Tair `tair_rdb`) |
+| `mongodb` | MongoDB replica set / sharded cluster | `mongodb-1-…` (replica set), `mongodb-2-…` (sharded, encrypted) |
 | `kafka` | Kafka instance, topics, groups, SASL users | `kafka-1-…` |
 | `elasticsearch` | Elasticsearch clusters | `es-1-…` (two zones) |
 | `nat` | NAT gateways | `nat-1-…` (internet), `nat-2-…` (intranet) |
@@ -161,7 +162,7 @@ Without a key pair, login comes from `EXAMPLE_STAGE_ECS_PASSWORD` (8-30 letters 
 | `rotation_interval` (optional) | Default `365d`; `null` disables rotation. |
 | `deletion_protection` (optional) | Default `true`. Deleting or disabling a key locks every disk and RDS instance encrypted with it. |
 
-`kms-1` encrypts ECS disks, `kms-2` RDS, so disabling one never locks the other.
+`kms-1` encrypts ECS disks, `kms-2` RDS, `kms-3` MongoDB, so disabling one never locks the other.
 
 ### `ram/` (one file per RAM user; `name` = user name)
 
@@ -217,6 +218,23 @@ Passwords never go in files: export `EXAMPLE_STAGE_RDS_ACCOUNT_PASSWORDS='{"rds-
 | `shard_count`, `security_ips`, `deletion_protection`, `password_length` (optional) | `deletion_protection` is only valid for `Redis`. |
 
 Passwords never go in files: export `EXAMPLE_STAGE_REDIS_PASSWORDS='{"redis-1-c1-example-stage":"..."}'`. An instance without an entry gets a random password shown in the `generated_passwords` output.
+
+### `mongodb/` (one file per instance; `name` = instance name)
+
+| Key | Meaning |
+|---|---|
+| `vpc`, `subnet` | Names of a `vpc` and a `subnet` instance file; the VPC CIDR is the default `security_ips`. |
+| `architecture` | `replica_set` or `sharded`. Changing it replaces the instance. |
+| `engine_version` | `4.0` to `8.0`; see [modules/mongodb/README.md](../../modules/mongodb/README.md). |
+| `instance_class`, `storage_gb`, `replication_factor`, `readonly_replicas` | `replica_set` only; classes and the minimum disk are region specific. |
+| `mongos`, `shards`, `config_server` | `sharded` only: at least two mongos and two shards, each `{ node_class, node_storage }`. |
+| `zone_id` | Primary zone; must be the zone of the `subnet` vSwitch, a mismatch fails at Terragrunt time. |
+| `secondary_zone_id`, `hidden_zone_id` (optional) | Cloud-disk replica sets only. All three zones must differ, so this needs three registered zones; the example tenant has two, so both examples are single-zone. |
+| `backup`, `parameters` (optional) | `{ period, time, retention_days }` with a one-hour UTC window, and engine parameters. |
+| `kms_key` (optional) | Name of a `kms` instance file; encrypts the cloud disks. ForceNew. |
+| `storage_type`, `security_ips`, `deletion_protection`, `password_length` (optional) | `deletion_protection` defaults to false; set `true` to block release. |
+
+Passwords never go in files: export `EXAMPLE_STAGE_MONGODB_PASSWORDS='{"mongodb-1-c1-example-stage":"..."}'`. An instance without an entry gets a random `root` password shown in the `generated_passwords` output.
 
 ### `kafka/` (one file per instance; `name` = instance name)
 

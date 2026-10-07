@@ -47,6 +47,7 @@ Two layers: `modules/` (reusable implementation, never owns deployment state) an
 | **RAM** `modules/ram` | RAM user with one AccessKey, principal of bucket policies. |
 | **RDS** `modules/rds` | MySQL, PostgreSQL, MariaDB with backup policy, databases, accounts, privileges. |
 | **Redis** `modules/redis` | Redis OSS (`alicloud_kvstore_instance`) or Tair (`alicloud_redis_tair_instance`), chosen by `instance_type`. |
+| **MongoDB** `modules/mongodb` | ApsaraDB for MongoDB replica set (`alicloud_mongodb_instance`) or sharded cluster (`alicloud_mongodb_sharding_instance`), chosen by `architecture`; backup policy, read-only nodes, cloud-disk encryption, parameters. |
 | **Kafka** `modules/kafka` | Instance, topics, consumer groups, VPC allow-list, SASL users and ACLs. |
 | **Elasticsearch** `modules/elasticsearch` | VPC-only cluster, optional dedicated masters and Kibana. |
 | **ECS** `modules/ecs` | Instances, user data (first boot, ignored after create), key pairs, data disks, generated passwords, network/security group attachments. |
@@ -145,7 +146,7 @@ bash scripts/check-deploy.sh                    # leaf guard; prints "leaf guard
 ### Provider and Credentials
 *   Credentials come from environment/secret injection or another approved external mechanism. Never commit AccessKey ID/Secret, security token, API token, backend password or private credential material. Do not echo secrets through shell debugging or Terraform/OpenTofu logging. Region explicit and deterministic.
 *   Provider aliases only for a documented multi-account/multi-region requirement.
-*   **Exception (owner decision, 2026-10-01; extended 2026-10-02 to the RAM AccessKey of `modules/ram`; extended 2026-10-04 to the Redis/Tair default-account password, the Kafka SASL user passwords and the Elasticsearch `elastic` password):** secrets the modules generate for ECS and RDS logins (random passwords, `generate_key_pair` private keys), the AccessKey ID and secret of each RAM user, and the Redis, Kafka and Elasticsearch passwords are printed after apply by the single `terragrunt` Atlantis workflow and appear in the MR/PR comment. Everyone with read access to the MR/PR and its email notifications sees them, so rotate them after the first login. The workflow posts any stack output named `generated_passwords` and any `*.pem` file in the leaf directory, then deletes the `.pem` files (also when the apply fails); do not reuse that output name for anything else. Secrets supplied by the operator (`EXAMPLE_STAGE_ECS_PASSWORD`, `EXAMPLE_STAGE_RDS_ACCOUNT_PASSWORDS`, `EXAMPLE_STAGE_REDIS_PASSWORDS`, `EXAMPLE_STAGE_KAFKA_SASL_PASSWORDS`, `EXAMPLE_STAGE_ELASTICSEARCH_PASSWORDS`) are never output.
+*   **Exception (owner decision, 2026-10-01; extended 2026-10-02 to the RAM AccessKey of `modules/ram`; extended 2026-10-04 to the Redis/Tair default-account password, the Kafka SASL user passwords and the Elasticsearch `elastic` password; extended 2026-10-07 to the MongoDB `root` password):** secrets the modules generate for ECS and RDS logins (random passwords, `generate_key_pair` private keys), the AccessKey ID and secret of each RAM user, and the Redis, Kafka, Elasticsearch and MongoDB passwords are printed after apply by the single `terragrunt` Atlantis workflow and appear in the MR/PR comment. Everyone with read access to the MR/PR and its email notifications sees them, so rotate them after the first login. The workflow posts any stack output named `generated_passwords` and any `*.pem` file in the leaf directory, then deletes the `.pem` files (also when the apply fails); do not reuse that output name for anything else. Secrets supplied by the operator (`EXAMPLE_STAGE_ECS_PASSWORD`, `EXAMPLE_STAGE_RDS_ACCOUNT_PASSWORDS`, `EXAMPLE_STAGE_REDIS_PASSWORDS`, `EXAMPLE_STAGE_KAFKA_SASL_PASSWORDS`, `EXAMPLE_STAGE_ELASTICSEARCH_PASSWORDS`, `EXAMPLE_STAGE_MONGODB_PASSWORDS`) are never output.
 
 ### State, Plan/Apply and Dependency Safety
 *   Never disable state locking to work around contention. Never point two unrelated stacks at one state identity. Never delete remote state to resolve a normal plan/apply problem. Never run state surgery without an explicit recovery/migration procedure. Preserve isolation across tenants and environments.
@@ -153,7 +154,7 @@ bash scripts/check-deploy.sh                    # leaf guard; prints "leaf guard
 *   If a dependency changes output shape, update all consumers explicitly. Do not hide dependency failures with mock outputs in production paths. Test dependency graphs with the directory boundaries Atlantis will use.
 
 ### Example Tenant Safety
-*   `deploy/example-*` is the reference-only copy/paste template for new tenants: no credentials or live production endpoints, never an Atlantis project, never an unintended apply target; local validation allowed. It demonstrates tenant/env variables, explicit region, zones, mandatory tags, state identity, naming, module source, dependency usage, and every module (EIPs, public/private NAT, VPC peering, route tables, subnets in `subnet/<vpc-name>/` folders, security groups, ECS, CLB, ALB, KMS, RAM, OSS, RDS, Redis/Tair, Kafka, Elasticsearch, CBWP, CEN with a hub and a spoke VPC attachment).
+*   `deploy/example-*` is the reference-only copy/paste template for new tenants: no credentials or live production endpoints, never an Atlantis project, never an unintended apply target; local validation allowed. It demonstrates tenant/env variables, explicit region, zones, mandatory tags, state identity, naming, module source, dependency usage, and every module (EIPs, public/private NAT, VPC peering, route tables, subnets in `subnet/<vpc-name>/` folders, security groups, ECS, CLB, ALB, KMS, RAM, OSS, RDS, Redis/Tair, MongoDB, Kafka, Elasticsearch, CBWP, CEN with a hub and a spoke VPC attachment).
 *   New tenant: copy → rename tenant/env → replace region, zones, CIDRs, state identity → review dependencies → create PR/MR (`docs/WORKFLOWS.md` §1).
 
 ### Testing
@@ -227,7 +228,7 @@ bash scripts/check-deploy.sh                    # leaf guard; prints "leaf guard
 │   │   │   └── vpc-1-c1-example-stage.hcl
 │   │   ├── subnet/                 # Instance files grouped in <vpc-name>/ folders
 │   │   ├── eip/ security-group/ ecs/ kms/ ram/ oss/ rds/ cbwp/
-│   │   ├── redis/ kafka/ elasticsearch/
+│   │   ├── redis/ mongodb/ kafka/ elasticsearch/
 │   │   ├── vpc-peering/ route-table/ cen/
 │   │   ├── nat/                    # nat-1, nat-2; snat/ and dnat/ are their own leaves
 │   │   └── slb/                    # clb/ and alb/ leaves
@@ -237,7 +238,7 @@ bash scripts/check-deploy.sh                    # leaf guard; prints "leaf guard
 │   ├── vpc/                        # versions.tf vars.tf main.tf output.tf README.md tests/ instances/
 │   ├── vpc-peering/ route-table/ cen/ subnet/ eip/ nat/ nat-snat/ nat-dnat/
 │   ├── security-group/ ecs/ kms/ ram/ oss/ rds/ cbwp/
-│   ├── redis/ kafka/ elasticsearch/
+│   ├── redis/ mongodb/ kafka/ elasticsearch/
 │   └── slb-clb/ slb-alb/
 │
 ├── docs/

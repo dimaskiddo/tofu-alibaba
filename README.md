@@ -8,7 +8,7 @@ Every value you change lives in a small instance file. One leaf directory is one
 
 ## ✨ Why This Template?
 
-*   **🧱 Reusable Modules:** VPC, subnet, EIP, NAT (SNAT/DNAT), security group, VPC peering, route table, CEN, CBWP, KMS, RAM, OSS, RDS, Redis/Tair, Kafka, Elasticsearch, ECS, CLB and ALB. No backend, provider or credentials inside a module.
+*   **🧱 Reusable Modules:** VPC, subnet, EIP, NAT (SNAT/DNAT), security group, VPC peering, route table, CEN, CBWP, KMS, RAM, OSS, RDS, Redis/Tair, MongoDB, Kafka, Elasticsearch, ECS, CLB and ALB. No backend, provider or credentials inside a module.
 *   **🗂️ One State per Leaf:** State key `<tenant>/<env>/<leaf path>/<stack>.tfstate`, isolated per tenant, environment and stack.
 *   **📝 Instance Files Hold Every Value:** Leaves are wiring only. A typo in an instance file fails the leaf instead of being ignored.
 *   **🔒 Five Locking Backends:** Alibaba OSS (Tablestore lock), S3-compatible, GitLab, Gitea and generic HTTP state. Locking is never disabled.
@@ -16,7 +16,7 @@ Every value you change lives in a small instance file. One leaf directory is one
 *   **🚦 Atlantis Gate:** Explicit project per leaf, autodiscovery off, autoplan only for what changed.
 *   **🌍 Mandatory Region, Zones and Tags:** A deployment without them fails before any resource.
 *   **✅ Offline Validation for CI:** `scripts/validate-tenant.sh` validates any tenant without state or credentials.
-*   **🤫 Generated Secrets in the MR Comment:** Random ECS/RDS/RAM/Redis/Kafka/Elasticsearch secrets are posted after apply.
+*   **🤫 Generated Secrets in the MR Comment:** Random ECS/RDS/RAM/Redis/MongoDB/Kafka/Elasticsearch secrets are posted after apply.
 
 ---
 
@@ -51,7 +51,7 @@ Detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (what each part is) and [do
 ### 📋 Prerequisites
 
 *   **OpenTofu** `~> 1.10.0` and **Terragrunt** `~> 0.93.0`.
-*   Providers: `aliyun/alicloud ~> 1.293`, `hashicorp/random ~> 3.7` (ecs, rds, redis, kafka, elasticsearch) and `hashicorp/time ~> 0.14` (oss). Registry access or a provider mirror.
+*   Providers: `aliyun/alicloud ~> 1.293`, `hashicorp/random ~> 3.7` (ecs, rds, redis, mongodb, kafka, elasticsearch) and `hashicorp/time ~> 0.14` (oss). Registry access or a provider mirror.
 *   An **Atlantis** server with OpenTofu and Terragrunt, and a state backend (for OSS: bucket, Tablestore instance and table with `LockID`, a RAM user; see [ARCHITECTURE](docs/ARCHITECTURE.md#5-remote-state)).
 *   An Alibaba Cloud account with a RAM identity for the provider.
 
@@ -59,7 +59,7 @@ Detail: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) (what each part is) and [do
 
 | Path | Role |
 |---|---|
-| `modules/` | The 21 reusable modules. No backend, provider config or credentials. |
+| `modules/` | The 22 reusable modules. No backend, provider config or credentials. |
 | `deploy/root.hcl` | Root include. Generates `provider.tf` (validated `region`) and `backend.tf`; supplies `region`, `zones` and forwards the tenant's `base_tags`. |
 | `deploy/_common/` | `state.hcl` (backend templates). |
 | `deploy/<tenant>-<env>/` | `tenant.hcl` (tenant, env, `base_tags`, state settings), `provider.hcl` (region, zones), one directory per stack. Each holds a wiring-only `terragrunt.hcl` plus instance files (`*.hcl`). |
@@ -97,6 +97,7 @@ Credentials are injected only through the environment. Every variable starts wit
 | `EXAMPLE_STAGE_ECS_PASSWORD` | ECS login password (8-30 letters and digits with upper case, lower case and a digit). Optional. |
 | `EXAMPLE_STAGE_RDS_ACCOUNT_PASSWORDS` | JSON map of instance name to account name to password. Optional. |
 | `EXAMPLE_STAGE_REDIS_PASSWORDS` | JSON map of instance name to default-account password. Optional. |
+| `EXAMPLE_STAGE_MONGODB_PASSWORDS` | JSON map of instance name to `root` password. Optional. |
 | `EXAMPLE_STAGE_KAFKA_SASL_PASSWORDS` | JSON map of instance name to SASL user name to password. Optional. |
 | `EXAMPLE_STAGE_ELASTICSEARCH_PASSWORDS` | JSON map of instance name to `elastic` user password. Optional. |
 | `EXAMPLE_STAGE_ECS_IMAGE_ID` | Public ECS image ID of the target region, the ecs leaf's `image_id` fallback. Not checked up front: an empty value fails the ecs module validation at plan ("instance_type and image_id are required."). Needed to plan the ecs leaf unless its instance files set `image_id`. |

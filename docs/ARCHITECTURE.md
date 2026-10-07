@@ -22,6 +22,7 @@ graph LR
         L_ecs["ecs"]
         L_rds["rds"]
         L_redis["redis"]
+        L_mongodb["mongodb"]
         L_kafka["kafka"]
         L_es["elasticsearch"]
         L_nat["nat"]
@@ -49,6 +50,7 @@ graph LR
     L_ecs -.-> L_sg
     L_rds -.-> L_subnet
     L_redis -.-> L_subnet
+    L_mongodb -.-> L_subnet
     L_kafka -.-> L_subnet
     L_es -.-> L_subnet
     L_nat -.-> L_subnet
@@ -93,6 +95,7 @@ Do not make a module read files from `deploy/`, and do not make it depend on ano
 | **OSS** | `modules/oss` | Private or public buckets: 30s settle wait, public-access block, ACL, RAM-user policy, encryption, versioning, lifecycle. |
 | **RDS** | `modules/rds` | MySQL, PostgreSQL, MariaDB with backup policy, databases, accounts, privileges. |
 | **Redis** | `modules/redis` | Redis OSS (`alicloud_kvstore_instance`) or Tair (`alicloud_redis_tair_instance`), chosen by `instance_type`. |
+| **MongoDB** | `modules/mongodb` | ApsaraDB for MongoDB replica set (`alicloud_mongodb_instance`) or sharded cluster (`alicloud_mongodb_sharding_instance`), chosen by `architecture`. |
 | **Kafka** | `modules/kafka` | Instance, topics, consumer groups, VPC allow-list, SASL users and ACLs. |
 | **Elasticsearch** | `modules/elasticsearch` | VPC-only cluster, optional dedicated masters and Kibana. |
 | **ECS** | `modules/ecs` | Instances, key pairs, data disks, generated passwords, network and security group attachments. |
@@ -264,7 +267,7 @@ Every variable starts with the tenant and environment (`<TENANT>_<ENV>_`, upper 
 
 - **Enforced up front:** a missing provider or state credential variable fails before any resource, naming the variable. The check runs for `init`, `plan`, `apply`, `destroy`, `output`, `import`, `refresh`, `show`, `state`, `force-unlock`, `taint`, `untaint`, `console` and `workspace`; the same commands get the mapped variables. Offline `validate` needs none of them.
 - **Not enforced up front:** `ECS_IMAGE_ID` and `KMS_INSTANCE_ID` are fallbacks. An empty value fails module validation at plan ("instance_type and image_id are required." in ecs, "dkms_instance_id must not be empty." in kms).
-- **Refused:** a global `TF_VAR_password`, `TF_VAR_account_passwords`, `TF_VAR_redis_passwords`, `TF_VAR_kafka_sasl_passwords`, `TF_VAR_elasticsearch_passwords`; any leaf input as `TF_VAR_*` (`region`, `zones`, `tags`, `instances`, `groups`, `eips`, `private_key_dir`: Terragrunt skips an input whose `TF_VAR_*` is already set, so it would override every tenant); or an unprefixed provider/AWS credential (`ALICLOUD_ACCESS_KEY`, `ALICLOUD_SECRET_KEY`, `ALICLOUD_SECURITY_TOKEN`, `ALIBABA_CLOUD_SECURITY_TOKEN`, `ALIBABA_CLOUD_PROFILE`, `ALICLOUD_PROFILE`, `ALIBABA_CLOUD_ROLE_ARN`, `ALICLOUD_ASSUME_ROLE_ARN`, `AWS_SESSION_TOKEN`, `AWS_PROFILE`). The list in `env_global` is the whole refusal set.
+- **Refused:** a global `TF_VAR_password`, `TF_VAR_account_passwords`, `TF_VAR_redis_passwords`, `TF_VAR_kafka_sasl_passwords`, `TF_VAR_elasticsearch_passwords`, `TF_VAR_mongodb_passwords`; any leaf input as `TF_VAR_*` (`region`, `zones`, `tags`, `instances`, `groups`, `eips`, `private_key_dir`: Terragrunt skips an input whose `TF_VAR_*` is already set, so it would override every tenant); or an unprefixed provider/AWS credential (`ALICLOUD_ACCESS_KEY`, `ALICLOUD_SECRET_KEY`, `ALICLOUD_SECURITY_TOKEN`, `ALIBABA_CLOUD_SECURITY_TOKEN`, `ALIBABA_CLOUD_PROFILE`, `ALICLOUD_PROFILE`, `ALIBABA_CLOUD_ROLE_ARN`, `ALICLOUD_ASSUME_ROLE_ARN`, `AWS_SESSION_TOKEN`, `AWS_PROFILE`). The list in `env_global` is the whole refusal set.
 - `terragrunt render --json` prints the mapped values: do not run it with real secrets.
 
 Where each secret comes from:
@@ -273,8 +276,8 @@ Where each secret comes from:
 |---|---|
 | ECS login | key pair (`key_name`, `public_key` or `generate_key_pair` in the instance file), else `<PREFIX>_ECS_PASSWORD`, else a random password (default 8 characters, `password_length`) |
 | RDS accounts | `<PREFIX>_RDS_ACCOUNT_PASSWORDS`; an account without an entry gets a random password (default 8, `password_length`) |
-| Redis/Tair, Kafka SASL, Elasticsearch | `<PREFIX>_REDIS_PASSWORDS`, `<PREFIX>_KAFKA_SASL_PASSWORDS`, `<PREFIX>_ELASTICSEARCH_PASSWORDS`; an instance or user without an entry gets a random password (default 16) |
-| Generated secrets | sensitive output `generated_passwords` of the `ecs`, `rds`, `ram`, `redis`, `kafka`, `elasticsearch` stacks (`ram`: each RAM user's AccessKey ID and secret); a generated ECS private key goes once to `<instance>.pem` in the leaf directory |
+| Redis/Tair, MongoDB, Kafka SASL, Elasticsearch | `<PREFIX>_REDIS_PASSWORDS`, `<PREFIX>_MONGODB_PASSWORDS`, `<PREFIX>_KAFKA_SASL_PASSWORDS`, `<PREFIX>_ELASTICSEARCH_PASSWORDS`; an instance or user without an entry gets a random password (default 16) |
+| Generated secrets | sensitive output `generated_passwords` of the `ecs`, `rds`, `ram`, `redis`, `mongodb`, `kafka`, `elasticsearch` stacks (`ram`: each RAM user's AccessKey ID and secret); a generated ECS private key goes once to `<instance>.pem` in the leaf directory |
 
 ---
 
@@ -326,7 +329,7 @@ Leaf order (a number is the apply level; leaves with the same number are indepen
 | Order | Leaf (state) | Instance files | Creates | Reads from |
 |---|---|---|---|---|
 | 1 | `vpc` | `vpc-1`, `vpc-2`, `vpc-3` | spoke, hub and CEN spoke VPC | none |
-| 1 | `kms` | `kms-1`, `kms-2` | keys and aliases in the existing KMS instance | none |
+| 1 | `kms` | `kms-1`, `kms-2`, `kms-3` | keys and aliases in the existing KMS instance | none |
 | 1 | `ram` | `ram-oss-1`, `ram-oss-2` | RAM users with one AccessKey each | none |
 | 1 | `eip` | `eip-snat-1`, `eip-dnat-1` | two public IPs (outbound `PayByTraffic` 10 Mbit/s, inbound `PayByTraffic` 5 Mbit/s) | none |
 | 2 | `subnet` | `vpc-1-…/subnet-a-1`, `subnet-b-1`; `vpc-2-…/shared-a-2`, `shared-b-2`; `vpc-3-…/subnet-a-3`, `subnet-b-3` | one vSwitch per zone in each VPC | `vpc` |
@@ -336,6 +339,7 @@ Leaf order (a number is the apply level; leaves with the same number are indepen
 | 3 | `ecs` | `bastion-1`, `app-1` | compute instances | `subnet`, `security-group`; `kms` only when a disk sets `kms_key` |
 | 3 | `rds` | `rds-1`, `rds-2` | database instances with databases and accounts | `vpc`, `subnet`; `kms` only when an instance file sets `kms_key` |
 | 3 | `redis` | `redis-1` (Redis, two zones), `redis-2` (Tair `tair_rdb`) | managed in-memory databases, allowed clients default to the VPC CIDR | `vpc`, `subnet` |
+| 3 | `mongodb` | `mongodb-1` (replica set, three nodes plus a read-only node, backup policy), `mongodb-2` (sharded, disk encryption) | managed MongoDB, allowed clients default to the VPC CIDR | `vpc`, `subnet`; `kms` only when an instance file sets `kms_key` |
 | 3 | `kafka` | `kafka-1` | Kafka instance with topics, a consumer group, a SASL user and its ACLs | `vpc`, `subnet`; `security-group` only when an instance file refers to one |
 | 3 | `elasticsearch` | `es-1` | two-zone cluster with dedicated masters and Kibana, no public access | `vpc`, `subnet` |
 | 3 | `nat` | `nat-1` (internet), `nat-2` (intranet) | public NAT bound to both EIPs; private NAT with transit IPs `10.100.250.10` and `.20` | `vpc`, `subnet`, `eip` |
@@ -371,7 +375,7 @@ Each leaf carries a `.terraform.lock.hcl` (the repo has no commits yet, so it is
 
 ## 10. Key Design Decisions
 
-1. **One state per leaf, one Atlantis project per leaf.** A project directory maps to one state boundary, and Atlantis locks per leaf. A project for the whole tenant would put 21 states behind one plan file.
+1. **One state per leaf, one Atlantis project per leaf.** A project directory maps to one state boundary, and Atlantis locks per leaf. A project for the whole tenant would put 22 states behind one plan file.
 2. **Autodiscovery off.** Atlantis would take the directory of each changed file as the project, never walk up to a `terragrunt.hcl`, ignore instance `*.hcl` files, plan nothing for a `modules/` change, and give autodiscovered projects neither the workflow nor `when_modified`. It would also risk `deploy/example-*` becoming an execution target.
 3. **Tenant-prefixed environment.** One Atlantis server holds several tenants without credentials leaking between them; global overrides are refused.
 4. **Mock outputs only for `validate` and `init`.** A `plan` never uses mocks; an unapplied dependency fails the plan.
@@ -379,7 +383,7 @@ Each leaf carries a `.terraform.lock.hcl` (the repo has no commits yet, so it is
 6. **Private NAT independent of peering and route-table (2026-10-02).** `nat` routes its own transit CIDR.
 7. **Transit Router activation not automated.** The provider activates it at plan time, irreversibly.
 8. **No static scanner adopted (2026-10-02).** tflint has no alicloud ruleset, trivy has no alicloud checks, checkov is not adopted. Validation blocks and `tofu test` are the gate.
-9. **Generated secrets appear in the MR/PR comment (owner decision 2026-10-01, extended 2026-10-02 and 2026-10-04).** Applies to ECS/RDS logins, `generate_key_pair` keys, RAM AccessKeys and Redis/Kafka/Elasticsearch passwords. Operator-supplied secrets are never output. Rotate after first login.
+9. **Generated secrets appear in the MR/PR comment (owner decision 2026-10-01, extended 2026-10-02, 2026-10-04 and 2026-10-07).** Applies to ECS/RDS logins, `generate_key_pair` keys, RAM AccessKeys and Redis/MongoDB/Kafka/Elasticsearch passwords. Operator-supplied secrets are never output. Rotate after first login.
 10. **The example tenant is reference only.** It is never an Atlantis project; `scripts/check-atlantis.sh` fails on any `example-` match in `atlantis.yaml`.
 11. **Instance files carry every value; leaves are wiring.** A reviewer reads one small file per change and the guards reject typos instead of ignoring them.
 12. **Standing rule for wrapper validations.** Optional keys arrive as `null`, so wrapper `instances/vars.tf` checks use `coalesce(try(i.X, null), …)` and never assume a non-null collection.

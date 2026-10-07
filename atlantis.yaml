@@ -27,7 +27,7 @@ workflows:
         - env:
             name: TG_NON_INTERACTIVE
             value: "true"
-        # ecs, rds, ram, redis, kafka and elasticsearch can generate secrets (login passwords, RAM AccessKeys, SASL users); by owner decision they are posted in the MR/PR comment. Other stacks print nothing.
+        # ecs, rds, ram, redis, kafka, elasticsearch and mongodb can generate secrets (login passwords, RAM AccessKeys, SASL users); by owner decision they are posted in the MR/PR comment. Other stacks print nothing.
         # One step: the .pem files are printed and removed even when apply or output fails, so a generated key is never lost.
         - run: |
             terragrunt apply "$PLANFILE"; rc=$?

@@ -58,6 +58,7 @@ Dependencies between leaves:
 - rds reads `vpc` and `subnet`, and `kms` when an instance file sets `kms_key`.
 - slb/clb reads `subnet` and `ecs`; slb/alb reads `vpc`, `subnet` and `ecs`.
 - redis and elasticsearch read `vpc` and `subnet`.
+- mongodb reads `vpc` and `subnet`, and `kms` when an instance file sets `kms_key`.
 - kafka reads `vpc` and `subnet`, and `security-group` when an instance file refers to one.
 - oss reads `ram` (each bucket's `ram_user`), and `kms` when an instance file sets `kms_key`.
 
@@ -238,6 +239,19 @@ projects:
         - "../../_common/*.hcl"
         - "../../../modules/redis/**/*.tf"
 
+  - name: acme-prod-mongodb
+    dir: deploy/acme-prod/mongodb
+    workflow: terragrunt
+    terraform_distribution: opentofu
+    autoplan:
+      when_modified:
+        - "*.hcl"
+        - "../*.hcl"
+        - "../kms/*.hcl"
+        - "../../root.hcl"
+        - "../../_common/*.hcl"
+        - "../../../modules/mongodb/**/*.tf"
+
   - name: acme-prod-kafka
     dir: deploy/acme-prod/kafka
     workflow: terragrunt
@@ -339,7 +353,7 @@ projects:
 Why these values:
 
 - `name` is `<tenant>-<env>-<leaf>` (the leaf path with `/` as `-`). It is unique per project, and the tenant and env in it show which environment a plan comment belongs to.
-- `dir` is one leaf directory. A leaf is exactly one state, so one Atlantis project is one state boundary and Atlantis locks per leaf. One project for the whole tenant directory would put 21 states behind one plan file and one lock, so it is not used.
+- `dir` is one leaf directory. A leaf is exactly one state, so one Atlantis project is one state boundary and Atlantis locks per leaf. One project for the whole tenant directory would put 22 states behind one plan file and one lock, so it is not used.
 - `workflow: terragrunt` is the only workflow; it runs OpenTofu through Terragrunt.
 - Only the module line and the depth prefix differ per leaf. Atlantis' parser rejects unknown top-level keys, so there is no `defaults:` block.
 
@@ -381,7 +395,7 @@ sequenceDiagram
 ```mermaid
 flowchart LR
     L1["1: vpc, kms, ram, eip"] --> L2["2: subnet, security-group, vpc-peering, oss"]
-    L2 --> L3["3: ecs, rds, redis, kafka, elasticsearch, nat, cen"]
+    L2 --> L3["3: ecs, rds, redis, mongodb, kafka, elasticsearch, nat, cen"]
     L3 --> L4["4: nat/snat, slb/clb, slb/alb, route-table"]
     L4 --> L5["later: cbwp, nat/dnat"]
 ```
@@ -428,7 +442,7 @@ Apply, destroy, state surgery and backend migration run only through Atlantis or
 
 ### 6. Generated secrets
 
-- Sensitive output `generated_passwords` of `ecs`, `rds`, `ram`, `redis`, `kafka`, `elasticsearch`, and a generated ECS private key as `<instance>.pem` in the leaf directory.
+- Sensitive output `generated_passwords` of `ecs`, `rds`, `ram`, `redis`, `mongodb`, `kafka`, `elasticsearch`, and a generated ECS private key as `<instance>.pem` in the leaf directory.
 - The single `terragrunt` Atlantis workflow prints both after apply, then deletes the `.pem` files, also when the apply fails. They appear in the MR/PR comment, so everyone with read access to the MR/PR and its email notifications sees them (owner decision, see [ARCHITECTURE.md](ARCHITECTURE.md#10-key-design-decisions)).
 - Stacks without generated secrets print nothing. Do not reuse the output name `generated_passwords` for anything else.
 - Rotate after the first login. Operator-supplied secrets are never output.

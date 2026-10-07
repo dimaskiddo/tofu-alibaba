@@ -135,6 +135,7 @@ locals {
     TF_VAR_redis_passwords         = "REDIS_PASSWORDS"
     TF_VAR_kafka_sasl_passwords    = "KAFKA_SASL_PASSWORDS"
     TF_VAR_elasticsearch_passwords = "ELASTICSEARCH_PASSWORDS"
+    TF_VAR_mongodb_passwords       = "MONGODB_PASSWORDS"
   }
   env_vars = { for k, v in merge(local.env_required, local.env_optional) : k => get_env("${local.env_prefix}${v}", "") if get_env("${local.env_prefix}${v}", "") != "" }
 
@@ -153,7 +154,7 @@ locals {
   env_global = [
     "TF_VAR_password", "TF_VAR_account_passwords",
     "TF_VAR_region", "TF_VAR_zones", "TF_VAR_tags", "TF_VAR_instances", "TF_VAR_groups", "TF_VAR_eips", "TF_VAR_private_key_dir",
-    "TF_VAR_redis_passwords", "TF_VAR_kafka_sasl_passwords", "TF_VAR_elasticsearch_passwords",
+    "TF_VAR_redis_passwords", "TF_VAR_kafka_sasl_passwords", "TF_VAR_elasticsearch_passwords", "TF_VAR_mongodb_passwords",
     "ALICLOUD_ACCESS_KEY", "ALICLOUD_SECRET_KEY", "ALICLOUD_SECURITY_TOKEN", "ALIBABA_CLOUD_SECURITY_TOKEN",
     "ALIBABA_CLOUD_PROFILE", "ALICLOUD_PROFILE", "ALIBABA_CLOUD_ROLE_ARN", "ALICLOUD_ASSUME_ROLE_ARN",
     "AWS_SESSION_TOKEN", "AWS_PROFILE",
