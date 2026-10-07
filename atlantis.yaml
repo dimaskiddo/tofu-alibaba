@@ -1,0 +1,40 @@
+version: 3
+
+autodiscover:
+  mode: disabled
+
+automerge: false
+
+workflows:
+  terragrunt:
+    plan:
+      steps:
+        - env:
+            name: TG_TF_PATH
+            value: tofu
+        - env:
+            name: TG_NON_INTERACTIVE
+            value: "true"
+        - run: terragrunt hcl fmt --check
+        - run: terragrunt init
+        - run: terragrunt plan -out "$PLANFILE"
+        - run: terragrunt show -json "$PLANFILE" > "$SHOWFILE"
+    apply:
+      steps:
+        - env:
+            name: TG_TF_PATH
+            value: tofu
+        - env:
+            name: TG_NON_INTERACTIVE
+            value: "true"
+        # ecs, rds, ram, redis, kafka and elasticsearch can generate secrets (login passwords, RAM AccessKeys, SASL users); by owner decision they are posted in the MR/PR comment. Other stacks print nothing.
+        # One step: the .pem files are printed and removed even when apply or output fails, so a generated key is never lost.
+        - run: |
+            terragrunt apply "$PLANFILE"; rc=$?
+            for f in *.pem; do [ -e "$f" ] || continue; echo "== $f"; cat "$f"; rm -f "$f"; done
+            out=$(terragrunt output -json) || exit 1
+            case "$out" in *'"generated_passwords"'*) terragrunt output -json generated_passwords ;; esac
+            exit $rc
+
+# One project per leaf (= one state). Copy the tenant block from docs/WORKFLOWS.md "Register Atlantis projects"; deploy/example-* is never listed.
+projects: []

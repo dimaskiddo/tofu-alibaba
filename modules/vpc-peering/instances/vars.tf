@@ -1,0 +1,30 @@
+variable "instances" {
+  type        = any
+  description = "Instances keyed by resource name (the instance `name` value). Each value takes the inputs of ../ except name; its optional tags merge over the shared tags."
+
+  validation {
+    condition     = length(var.instances) >= 1
+    error_message = "At least one instance is required."
+  }
+
+  validation {
+    condition     = alltrue([for n, i in var.instances : can(keys(i)) ? length(setsubtract(keys(i), ["vpc_id", "vpc_cidr_block", "accepting_vpc_id", "accepting_vpc_cidr_block", "accepting_region_id", "accepting_ali_uid", "bandwidth", "link_type", "route_table_id", "accepting_route_table_id", "description", "tags"])) == 0 : false])
+    error_message = "An instance has an unknown key; allowed keys are the inputs of ../ except the name, i.e. vpc_id, vpc_cidr_block, accepting_vpc_id, accepting_vpc_cidr_block, accepting_region_id, accepting_ali_uid, bandwidth, link_type, route_table_id, accepting_route_table_id, description, tags."
+  }
+}
+
+variable "tags" {
+  type        = map(string)
+  description = "Tags applied to every instance. At least one tag is required."
+  nullable    = false
+
+  validation {
+    condition     = length(var.tags) >= 1
+    error_message = "At least one tag is required."
+  }
+
+  validation {
+    condition     = alltrue([for k, v in var.tags : length(k) > 0 && length(v) > 0])
+    error_message = "Tag keys and values must not be empty."
+  }
+}
