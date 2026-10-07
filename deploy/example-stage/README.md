@@ -139,7 +139,8 @@ An EIP or ALB name may appear in only one instance file; Terragrunt fails before
 | `private_ip` (optional) | Inside that subnet's CIDR; unique across instances. |
 | `instance_type`, `description` (optional) | e.g. `ecs.g7.large`. |
 | `image_id` | Omitted in the example instance files, so the leaf falls back to `EXAMPLE_STAGE_ECS_IMAGE_ID` (mapped by `root.hcl`) because image IDs depend on region and OS: export a public image ID (ECS console or `DescribeImages`) before plan. Empty fails. |
-| `user_data`, `internet_max_bw_out`, `deletion_protection` (optional) | Passed to the module; see [modules/ecs/README.md](../../modules/ecs/README.md). |
+| `user_data` or `user_data_file` (optional, at most one) | First-boot script: inline text, or a path inside the leaf (no leading `/`, no `..`), e.g. `user-data/app-1-c1-example-stage.sh`. Runs once; later edits are ignored (see [modules/ecs/README.md](../../modules/ecs/README.md#user-data)). |
+| `internet_max_bw_out`, `deletion_protection` (optional) | Passed to the module; see [modules/ecs/README.md](../../modules/ecs/README.md). |
 | `system_disk_category` (optional) | Default `cloud_essd`. Changing it replaces the instance. |
 | `system_disk_performance_level` (optional) | `PL0`-`PL3`, only with `cloud_essd`. In place. |
 | `system_disk_size` (optional) | GiB, 20-500, default 40. Grow only. |

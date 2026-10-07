@@ -49,7 +49,7 @@ Two layers: `modules/` (reusable implementation, never owns deployment state) an
 | **Redis** `modules/redis` | Redis OSS (`alicloud_kvstore_instance`) or Tair (`alicloud_redis_tair_instance`), chosen by `instance_type`. |
 | **Kafka** `modules/kafka` | Instance, topics, consumer groups, VPC allow-list, SASL users and ACLs. |
 | **Elasticsearch** `modules/elasticsearch` | VPC-only cluster, optional dedicated masters and Kibana. |
-| **ECS** `modules/ecs` | Instances, key pairs, data disks, generated passwords, network/security group attachments. |
+| **ECS** `modules/ecs` | Instances, user data (first boot, ignored after create), key pairs, data disks, generated passwords, network/security group attachments. |
 | **CLB / ALB** `modules/slb-clb`, `modules/slb-alb` | Classic and Application Load Balancers: listeners, backends, zones, server groups, rules. |
 | **CEN** `modules/cen` | CEN Enterprise Edition transit router for one region: CEN (or existing `cen_id`), VPC and inter-region peer attachments, system route table association and propagation. |
 | **CBWP** `modules/cbwp` | Shared bandwidth package; attaches EIPs and Internet-facing ALBs. |

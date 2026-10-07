@@ -56,6 +56,9 @@ resource "alicloud_instance" "this" {
   volume_tags                = local.instance_tags[each.key]
 
   lifecycle {
+    # A script runs only at first boot, so an edit would reboot the instance without rerunning it; a new script needs a new instance.
+    ignore_changes = [user_data]
+
     precondition {
       condition     = contains(var.zones, each.value.zone_id)
       error_message = "Instance ${each.key}: zone_id ${each.value.zone_id} is not one of the registered zones."

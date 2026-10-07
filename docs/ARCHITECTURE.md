@@ -383,3 +383,4 @@ Each leaf carries a `.terraform.lock.hcl` (the repo has no commits yet, so it is
 10. **The example tenant is reference only.** It is never an Atlantis project; `scripts/check-atlantis.sh` fails on any `example-` match in `atlantis.yaml`.
 11. **Instance files carry every value; leaves are wiring.** A reviewer reads one small file per change and the guards reject typos instead of ignoring them.
 12. **Standing rule for wrapper validations.** Optional keys arrive as `null`, so wrapper `instances/vars.tf` checks use `coalesce(try(i.X, null), …)` and never assume a non-null collection.
+13. **ECS user data is ignored after create.** A script runs only at first boot, so an edit would reboot the instance without rerunning it. A new script means a new instance name. Scripts live next to the instance file as `user_data_file` and are sent untemplated.

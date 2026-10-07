@@ -6,9 +6,9 @@ Every value you change lives in a small instance file. One leaf directory is one
 
 ---
 
-## ✨ Why This Platform?
+## ✨ Why This Template?
 
-*   **🧱 21 Reusable Modules:** VPC, subnet, EIP, NAT (SNAT/DNAT), security group, VPC peering, route table, CEN, CBWP, KMS, RAM, OSS, RDS, Redis/Tair, Kafka, Elasticsearch, ECS, CLB and ALB. No backend, provider or credentials inside a module.
+*   **🧱 Reusable Modules:** VPC, subnet, EIP, NAT (SNAT/DNAT), security group, VPC peering, route table, CEN, CBWP, KMS, RAM, OSS, RDS, Redis/Tair, Kafka, Elasticsearch, ECS, CLB and ALB. No backend, provider or credentials inside a module.
 *   **🗂️ One State per Leaf:** State key `<tenant>/<env>/<leaf path>/<stack>.tfstate`, isolated per tenant, environment and stack.
 *   **📝 Instance Files Hold Every Value:** Leaves are wiring only. A typo in an instance file fails the leaf instead of being ignored.
 *   **🔒 Five Locking Backends:** Alibaba OSS (Tablestore lock), S3-compatible, GitLab, Gitea and generic HTTP state. Locking is never disabled.
@@ -16,7 +16,7 @@ Every value you change lives in a small instance file. One leaf directory is one
 *   **🚦 Atlantis Gate:** Explicit project per leaf, autodiscovery off, autoplan only for what changed.
 *   **🌍 Mandatory Region, Zones and Tags:** A deployment without them fails before any resource.
 *   **✅ Offline Validation for CI:** `scripts/validate-tenant.sh` validates any tenant without state or credentials.
-*   **🤫 Generated Secrets in the MR Comment:** Random ECS/RDS/RAM/Redis/Kafka/Elasticsearch secrets are posted after apply (owner decision).
+*   **🤫 Generated Secrets in the MR Comment:** Random ECS/RDS/RAM/Redis/Kafka/Elasticsearch secrets are posted after apply.
 
 ---
 

@@ -183,6 +183,12 @@ variable "instances" {
     condition     = length(distinct([for k, i in var.instances : i.private_ip if i.private_ip != null])) == length([for k, i in var.instances : i.private_ip if i.private_ip != null])
     error_message = "private_ip values must be unique."
   }
+
+  validation {
+    # 43692 = Base64 length of 32768 bytes; the API limit is on the raw data. ponytail: 1 byte of slack, tofu has no byte-length function; the API rejects it at apply.
+    condition     = alltrue([for k, i in var.instances : i.user_data == null ? true : i.user_data != "" && length(base64encode(i.user_data)) <= 43692])
+    error_message = "user_data must not be empty and must be at most 32 KB before Base64 encoding."
+  }
 }
 
 variable "tags" {

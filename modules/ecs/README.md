@@ -30,7 +30,7 @@ Provider: `aliyun/alicloud ~> 1.293`, `hashicorp/random ~> 3.7`. OpenTofu `>= 1.
 | `password_length` | `number` | `8` | Whole number 8-30; length of the random password. |
 | `host_name` | `string` | `null` | |
 | `description` | `string` | `null` | |
-| `user_data` | `string` | `null` | |
+| `user_data` | `string` | `null` | Plain text (shell script, cloud-config, or `[bat]`/`[powershell]` on Windows), not Base64; the provider encodes it. Not empty, at most 32 KB before encoding. Changes after creation are ignored; see User data. |
 | `system_disk_category` | `string` | `"cloud_essd"` | `cloud_efficiency`, `cloud_ssd`, `cloud_essd`, `cloud`, `cloud_auto`, `cloud_essd_entry`. |
 | `system_disk_size` | `number` | `40` | Whole GiB, 20-500. |
 | `system_disk_performance_level` | `string` | `null` | `PL0`-`PL3`, only with `system_disk_category = "cloud_essd"`. Null keeps the provider default. |
@@ -85,6 +85,14 @@ Data disks are separate `alicloud_ecs_disk` + `alicloud_ecs_disk_attachment` res
 - Growing the filesystem inside the OS (`growpart`, `resize2fs`) stays with the operator.
 
 Encryption: `system_disk_encrypted` / `system_disk_kms_key_id` and a data disk's `encrypted` / `kms_key_id` are all ForceNew. Enabling or changing them on an existing disk replaces it (the instance, for the system disk), so decide before the first apply. A key ID requires `encrypted = true`; without one, Alibaba Cloud's default service key is used. Disabling or deleting the KMS key locks the disks encrypted with it.
+
+## User data
+
+- A shell script runs once, at the instance's first boot. Cloud-config modules and upstart jobs follow their own frequency; Windows scripts run only at first boot.
+- Changes to `user_data` after creation are ignored (`ignore_changes`): the provider would otherwise reboot the instance for a script Alibaba does not rerun. A new script needs a new instance, so use a new `name`, which destroys and recreates the old one.
+- It is not secret: it sits in state and is readable from inside the instance (`http://100.100.100.200/latest/user-data`), in the console and through `DescribeUserData`. Pass secrets another way.
+- The script is sent as given, with no templating, so `${VAR}` stays literal. Read instance facts from the metadata service. Use LF line endings.
+- Data disks attach after the instance exists, so a first-boot script cannot rely on them.
 
 ## Instances wrapper
 

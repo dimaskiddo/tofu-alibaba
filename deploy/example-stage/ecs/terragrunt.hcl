@@ -7,15 +7,20 @@ locals {
   known = [
     "name", "tags", "instance_type", "image_id", "zone_id", "subnet",
     "security_groups", "private_ip", "key_name", "public_key", "generate_key_pair", "password_length",
-    "description", "user_data", "internet_max_bw_out", "deletion_protection", "system_disk_category", "system_disk_size",
+    "description", "user_data", "user_data_file", "internet_max_bw_out", "deletion_protection", "system_disk_category", "system_disk_size",
     "system_disk_performance_level", "system_disk_encrypted", "system_disk_kms_key", "data_disks",
   ]
   unknown = [
     for n, f in include.root.locals.instances : "instance ${n}: unknown key(s) ${join(", ", sort(setsubtract(keys(f), local.known)))}"
     if length(setsubtract(keys(f), local.known)) > 0
   ]
-  keys_ok = lookup({ ok = "ok" }, length(local.unknown) == 0 ? "ok" : join("; ", local.unknown))
-  members = { for n, f in include.root.locals.instances : n => f if local.keys_ok == "ok" }
+  bad_user_data = concat(
+    [for n, f in include.root.locals.instances : "instance ${n}: set user_data or user_data_file, not both" if can(f.user_data) && can(f.user_data_file)],
+    [for n, f in include.root.locals.instances : "instance ${n}: user_data_file must be a relative path inside the leaf (no leading / and no ..)" if can(f.user_data_file) && (startswith(f.user_data_file, "/") || strcontains(f.user_data_file, ".."))],
+  )
+  problems = concat(local.unknown, local.bad_user_data)
+  keys_ok  = lookup({ ok = "ok" }, length(local.problems) == 0 ? "ok" : join("; ", local.problems))
+  members  = { for n, f in include.root.locals.instances : n => f if local.keys_ok == "ok" }
   kms_keys = distinct(flatten([
     for f in values(local.members) : concat(
       can(f.system_disk_kms_key) ? [f.system_disk_kms_key] : [],
@@ -76,7 +81,7 @@ inputs = {
       password_length    = try(f.password_length, null)
       host_name          = n
       description        = try(f.description, null)
-      user_data          = try(f.user_data, null)
+      user_data          = can(f.user_data_file) ? file("${get_terragrunt_dir()}/${f.user_data_file}") : try(f.user_data, null)
 
       internet_max_bw_out = try(f.internet_max_bw_out, null)
       deletion_protection = try(f.deletion_protection, null)

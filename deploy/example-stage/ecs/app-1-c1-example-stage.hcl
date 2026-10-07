@@ -8,6 +8,9 @@ locals {
   security_groups = ["sg-1-c1-example-stage"]
   tags            = { product = "example" }
 
+  # Runs once at first boot; editing the script never touches an existing instance (a new name creates a new one).
+  user_data_file = "user-data/app-1-c1-example-stage.sh"
+
   # No key pair: <TENANT>_<ENV>_ECS_PASSWORD if set, otherwise a random password of password_length (default 8).
 
   # image_id defaults to <TENANT>_<ENV>_ECS_IMAGE_ID (a public image ID, ECS console DescribeImages) set before plan.
